@@ -15,7 +15,7 @@
  * </table>
  * *********************************************************************************
  */
-#include "misaka_device/misaka_at24cxx.h"
+#include "misaka_device/at24cxx.h"
 
 /**
  * @brief 获得eeprom的页大小

@@ -15,7 +15,7 @@
  * </table>
  * *********************************************************************************
  */
-#include "misaka_device/misaka_at24cxx.h"
+#include "misaka_device/at24cxx.h"
 
 misaka_at24cxx misaka_at24cxx_obj = {0};
 
