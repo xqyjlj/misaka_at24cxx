@@ -106,7 +106,7 @@ _此函数需自己调用_
 Misaka_at24cxx_t misaka_at24cxx_port_init()
 {
     misaka_at24cxx_obj.type = MISAKA_AT24C04;
-    misaka_at24cxx_obj.isFRAM = 0;
+    misaka_at24cxx_obj.is_fram = 0;
     misaka_at24cxx_obj.mutex_release = mutex_release;
     misaka_at24cxx_obj.mutex_take = mutex_take;
     misaka_at24cxx_obj.delay_ms = delay_ms;

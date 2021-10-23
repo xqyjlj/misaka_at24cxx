@@ -1,5 +1,5 @@
 /**
- * @file Misaka_at24cxx.c
+ * @file at24cxx.c
  * @brief
  * @author xqyjlj (xqyjlj@126.com)
  * @version 0.0
@@ -19,7 +19,7 @@
 
 /**
  * @brief 获得eeprom的页大小
- * @param  type             eeprom型号
+ * @param type eeprom型号
  * @return uint16_t @c 页大小
  */
 static uint16_t misaka_at24cxx_get_pagesize(misaka_at24cxx_type type)
@@ -61,7 +61,7 @@ static uint16_t misaka_at24cxx_get_pagesize(misaka_at24cxx_type type)
 
 /**
  * @brief 获得eeprom的总容量大小
- * @param  type             eeprom型号
+ * @param type eeprom型号
  * @return uint32_t @c 总容量大小
  */
 static uint32_t misaka_at24cxx_get_capacity(misaka_at24cxx_type type)
@@ -97,25 +97,24 @@ static uint32_t misaka_at24cxx_get_capacity(misaka_at24cxx_type type)
 
 /**
  * @brief eeprom页写算法
- * @param  ops              eeprom对象
- * @param  addr             地址
- * @param  txbuf            待发送数据
- * @param  len              待发送数据长度
- * @return 0 @c             写入成功
- * @return 1 @c             写入失败
+ * @param ops eeprom对象
+ * @param addr 地址
+ * @param txbuf 待发送数据
+ * @param len 待发送数据长度
+ * @return 0 @c 写入成功
+ * @return 1 @c 写入失败
  */
-static uint8_t misaka_at24cxx_write_page(misaka_at24cxx_t ops, uint32_t addr, uint8_t* txbuf, uint32_t len)
+static uint8_t misaka_at24cxx_write_page(const misaka_at24cxx_t *ops, uint32_t addr, uint8_t *txbuf, uint32_t len)
 {
-    uint8_t buf[2];
-    uint8_t buf_size, address, ret;
-
-    if (((addr % ops->pagesize) + len) > ops->pagesize)
-    {
-        return 1;
-    }
-    if (ops->type > MISAKA_AT24C16)
-    {
-        address = ops->address;
+	uint8_t buf[2];
+	uint8_t buf_size, address, ret;
+	if (((addr % ops->pagesize) + len) > ops->pagesize)
+	{
+		return 1;
+	}
+	if (ops->type > MISAKA_AT24C16)
+	{
+		address = ops->address;
         buf[0] = (addr >> 8) & 0xff;
         buf[1] = addr & 0xff;
         buf_size = 2;
@@ -140,24 +139,24 @@ static uint8_t misaka_at24cxx_write_page(misaka_at24cxx_t ops, uint32_t addr, ui
 
 /**
  * @brief eeprom写入函数（不完整页）
- * @param  ops              eeprom对象
- * @param  addr             地址
- * @param  txbuf            待发送数据
- * @param  len              待发送数据长度
- * @return 0 @c             写入成功
- * @return 1 @c             写入失败
+ * @param ops eeprom对象
+ * @param addr 地址
+ * @param txbuf 待发送数据
+ * @param len 待发送数据长度
+ * @return 0 @c 写入成功
+ * @return 1 @c 写入失败
  */
-static uint8_t misaka_at24cxx_write_continue(misaka_at24cxx_t ops, uint32_t addr, uint8_t* txbuf, uint32_t len)
+static uint8_t misaka_at24cxx_write_continue(const misaka_at24cxx_t *ops, uint32_t addr, uint8_t *txbuf, uint32_t len)
 {
-    uint8_t offset, write_size, address, ret;
-    uint8_t buf[2];
+	uint8_t offset, write_size, address, ret;
+	uint8_t buf[2];
 
-    ops->mutex_take();
+	ops->mutex_take();
 
-    if (ops->type > MISAKA_AT24C16)
-    {
-        address = ops->address;
-        buf[0] = (addr >> 8) & 0xff;
+	if (ops->type > MISAKA_AT24C16)
+	{
+		address = ops->address;
+		buf[0] = (addr >> 8) & 0xff;
         buf[1] = addr & 0xff;
         ret = ops->i2c_send_then_send(address, buf, 2, txbuf, len);
         if (ret)
@@ -199,38 +198,38 @@ static uint8_t misaka_at24cxx_write_continue(misaka_at24cxx_t ops, uint32_t addr
 
 /**
  * @brief eeprom写入函数（包含页写算法）
- * @param  ops              eeprom对象
- * @param  addr             地址
- * @param  txbuf            待发送数据
- * @param  len              待发送数据长度
- * @return 0 @c             写入成功
- * @return 1 @c             写入失败
+ * @param ops eeprom对象
+ * @param addr 地址
+ * @param txbuf 待发送数据
+ * @param len 待发送数据长度
+ * @return 0 @c 写入成功
+ * @return 1 @c 写入失败
  */
-uint8_t misaka_at24cxx_write(misaka_at24cxx_t ops, uint32_t addr, uint8_t* txbuf, uint32_t len)
+uint8_t misaka_at24cxx_write(const misaka_at24cxx_t *ops, uint32_t addr, uint8_t *txbuf, uint32_t len)
 {
-    uint8_t write_len, page_offset;
-    uint8_t error = 0;
+	uint8_t write_len, page_offset;
+	uint8_t error = 0;
 
-    if (ops == 0)
-    {
+	if (ops == 0)
+	{
+		return 1;
+	}
+	if ((addr + len) > ops->capacity)
+	{
         return 1;
     }
-    if ((addr + len) > ops->capacity)
-    {
-        return 1;
-    }
 
-    if (ops->isFRAM)
-    {
-        /* FRAM */
-        error = misaka_at24cxx_write_continue(ops, addr, txbuf, len);
-    }
-    else
-    {
-        /* EEPROM */
-        while (len > 0)
-        {
-            page_offset = ops->pagesize - (addr % ops->pagesize);
+	if (ops->is_fram)
+	{
+		/* FRAM */
+		error = misaka_at24cxx_write_continue(ops, addr, txbuf, len);
+	}
+	else
+	{
+		/* EEPROM */
+		while (len > 0)
+		{
+			page_offset = ops->pagesize - (addr % ops->pagesize);
             write_len = len > page_offset ? page_offset : len;
             error = misaka_at24cxx_write_page(ops, addr, txbuf, write_len);
             if (error)
@@ -251,24 +250,24 @@ uint8_t misaka_at24cxx_write(misaka_at24cxx_t ops, uint32_t addr, uint8_t* txbuf
 
 /**
  * @brief eeprom读取函数
- * @param  ops              eeprom对象
- * @param  addr             地址
- * @param  rxbuf            待读取数据
- * @param  len              待读取数据长度
- * @return 0 @c             读取成功
- * @return 1 @c             读取失败
+ * @param ops eeprom对象
+ * @param addr 地址
+ * @param rxbuf 待读取数据
+ * @param len 待读取数据长度
+ * @return 0 @c 读取成功
+ * @return 1 @c 读取失败
  */
-uint8_t misaka_at24cxx_read(misaka_at24cxx_t ops, uint32_t addr, uint8_t* rxbuf, uint32_t len)
+uint8_t misaka_at24cxx_read(const misaka_at24cxx_t *ops, uint32_t addr, uint8_t *rxbuf, uint32_t len)
 {
-    uint8_t buf[2];
-    uint8_t buf_size, slave_addr, ret;
+	uint8_t buf[2];
+	uint8_t buf_size, slave_addr, ret;
 
-    if ((addr + len) > ops->capacity)
-    {
-        return 1;
-    }
-    if (ops->type > MISAKA_AT24C16)
-    {
+	if ((addr + len) > ops->capacity)
+	{
+		return 1;
+	}
+	if (ops->type > MISAKA_AT24C16)
+	{
         slave_addr = ops->address;
         buf[0] = (addr >> 8) & 0xff;
         buf[1] = addr & 0xff;
@@ -292,24 +291,24 @@ uint8_t misaka_at24cxx_read(misaka_at24cxx_t ops, uint32_t addr, uint8_t* rxbuf,
 
 /**
  * @brief eeprom擦除函数，将指定的数据块擦除成指定的数据
- * @param  ops              eeprom对象
- * @param  addr             地址
- * @param  data             指定的数据
- * @param  len              需要擦除的长度
- * @return 0 @c             擦除成功
- * @return 1 @c             擦除失败
+ * @param ops eeprom对象
+ * @param addr 地址
+ * @param data 指定的数据
+ * @param len 需要擦除的长度
+ * @return 0 @c 擦除成功
+ * @return 1 @c 擦除失败
  */
-uint8_t misaka_at24cxx_erase(misaka_at24cxx_t ops, uint32_t addr, uint8_t data, uint32_t len)
+uint8_t misaka_at24cxx_erase(const misaka_at24cxx_t *ops, uint32_t addr, uint8_t data, uint32_t len)
 {
-    uint8_t error = 0;
-    uint32_t i;
+	uint8_t error = 0;
+	uint32_t i;
 
-    if ((addr + len) > ops->capacity)
-    {
-        return 1;
-    }
-    for (i = 0; i < len; i++)
-    {
+	if ((addr + len) > ops->capacity)
+	{
+		return 1;
+	}
+	for (i = 0; i < len; i++)
+	{
         error = misaka_at24cxx_write_page(ops, addr, &data, len);
         if (error)
         {
@@ -321,21 +320,21 @@ uint8_t misaka_at24cxx_erase(misaka_at24cxx_t ops, uint32_t addr, uint8_t data, 
 
 /**
  * @brief eeprom检查函数
- * @param  ops              eeprom对象
- * @return 0 @c             检查成功
- * @return 1 @c             检查失败
+ * @param ops eeprom对象
+ * @return 0 @c 检查成功
+ * @return 1 @c 检查失败
  */
-uint8_t misaka_at24cxx_check(misaka_at24cxx_t ops)
+uint8_t misaka_at24cxx_check(const misaka_at24cxx_t *ops)
 {
-    uint8_t txbuf = 0x55;
-    uint8_t rxbuf = 0;
-    uint8_t ret;
+	uint8_t txbuf = 0x55;
+	uint8_t rxbuf = 0;
+	uint8_t ret;
 
-    ret = misaka_at24cxx_read(ops, ops->capacity - 1, &rxbuf, 1);
-    if (rxbuf == 0x55 && ret == 0)
-    {
-        return 0;
-    }
+	ret = misaka_at24cxx_read(ops, ops->capacity - 1, &rxbuf, 1);
+	if (rxbuf == 0x55 && ret == 0)
+	{
+		return 0;
+	}
     else
     {
         misaka_at24cxx_write(ops, ops->capacity - 1, &txbuf, 1);
@@ -353,19 +352,19 @@ uint8_t misaka_at24cxx_check(misaka_at24cxx_t ops)
 
 /**
  * @brief eeprom初始化函数
- * @param  ops              eeprom对象
+ * @param ops eeprom对象
  */
-void misaka_at24cxx_init(misaka_at24cxx_t ops)
+void misaka_at24cxx_init(misaka_at24cxx_t *ops)
 {
-    AT24CXX_ASSERT(ops);
-    AT24CXX_ASSERT(ops->i2c_send_then_recv);
-    AT24CXX_ASSERT(ops->i2c_send_then_send);
-    AT24CXX_ASSERT(ops->delay_ms);
-    AT24CXX_ASSERT(ops->mutex_release);
-    AT24CXX_ASSERT(ops->mutex_take);
+	AT24CXX_ASSERT(ops);
+	AT24CXX_ASSERT(ops->i2c_send_then_recv);
+	AT24CXX_ASSERT(ops->i2c_send_then_send);
+	AT24CXX_ASSERT(ops->delay_ms);
+	AT24CXX_ASSERT(ops->mutex_release);
+	AT24CXX_ASSERT(ops->mutex_take);
 
-    ops->capacity = misaka_at24cxx_get_capacity(ops->type);
-    ops->pagesize = misaka_at24cxx_get_pagesize(ops->type);
+	ops->capacity = misaka_at24cxx_get_capacity(ops->type);
+	ops->pagesize = misaka_at24cxx_get_pagesize(ops->type);
 }
 
 

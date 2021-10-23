@@ -1,5 +1,5 @@
 /**
- * @file Misaka_at24cxx_port_rtt.c
+ * @file at24cxx_port_rtt.c
  * @brief
  * @author xqyjlj (xqyjlj@126.com)
  * @version 0.0
@@ -15,7 +15,7 @@
  * </table>
  * *********************************************************************************
  */
-#include "misaka_at24cxx.h"
+#include "misaka_device/at24cxx.h"
 #include "rtthread.h"
 #include "rtdevice.h"
 
